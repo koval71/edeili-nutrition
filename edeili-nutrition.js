@@ -63,7 +63,7 @@ const menuOption = document.getElementById('dropdown-menu-menu');
 if (menuOption) {
     menuOption.addEventListener('click', function() {
         // Go to main menu (reload or navigate as needed)
-        window.location.href = 'home.html';
+        window.location.href = 'index.html';
     });
 }
 const contactOption = document.getElementById('dropdown-menu-contact');
@@ -103,7 +103,7 @@ if (menuIcon && menuDropdown) {
     const menuOption = document.getElementById('main-menu-link');
     if (menuOption) {
         menuOption.addEventListener('click', function() {
-            window.location.href = 'home.html';
+            window.location.href = 'index.html';
         });
     }
     // Contact option
