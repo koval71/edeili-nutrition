@@ -66,21 +66,24 @@ if (menuOption) {
         window.location.href = 'index.html';
     });
 }
-const contactOption = document.getElementById('dropdown-menu-contact');
+// Ensure only one event listener for contacto-link
+const contactOption = document.getElementById('contacto-link');
 if (contactOption) {
-    contactOption.addEventListener('click', function() {
-        // Go to contact page (if it exists)
+    contactOption.addEventListener('click', function(e) {
+        e.preventDefault();
         window.location.href = 'contact.html';
     });
 }
 // Cart icon logic
 const cartIcon = document.getElementById('cart-icon');
+const cartOverlay = document.getElementById('cart-overlay');
 if (cartIcon) {
     cartIcon.addEventListener('click', function(e) {
         // Hide any open modals
         const modals = document.querySelectorAll('.modal');
         modals.forEach(m => m.style.display = 'none');
-        // Open cart popup
+        // Open cart popup and overlay
+        if (cartOverlay) cartOverlay.style.display = 'block';
         cartPopup.style.display = 'block';
         renderCartPopup();
     });
@@ -104,13 +107,6 @@ if (menuIcon && menuDropdown) {
     if (menuOption) {
         menuOption.addEventListener('click', function() {
             window.location.href = 'index.html';
-        });
-    }
-    // Contact option
-    const contactOption = document.getElementById('contacto-link');
-    if (contactOption) {
-        contactOption.addEventListener('click', function() {
-            window.location.href = 'contact.html';
         });
     }
 }
@@ -142,11 +138,13 @@ updateCartCount();
 if (closeCartPopup && cartPopup) {
     closeCartPopup.addEventListener('click', function() {
         cartPopup.style.display = 'none';
+        if (cartOverlay) cartOverlay.style.display = 'none';
     });
 }
 if (cancelCartPopupBtn) {
     cancelCartPopupBtn.addEventListener('click', function() {
         if (cartPopup) cartPopup.style.display = 'none';
+        if (cartOverlay) cartOverlay.style.display = 'none';
         // Clear Personalizar modal selections and comment box
         clearSelectedOptions();
         const sinPulpaLabel = document.getElementById('sin-pulpa-label');
@@ -158,18 +156,16 @@ if (cancelCartPopupBtn) {
         if (commentBox) commentBox.value = '';
         selectedDrink = null;
         lastMenuSelectedDrink = null;
-        document.querySelector('.order-form').style.display = 'block';
-        document.querySelector('.cart-page').style.display = 'none';
-        document.querySelector('.info-form').style.display = 'none';
-        document.querySelector('.thankyou-page').style.display = 'none';
     });
 }
+// Also hide overlay when navigating away from cart popup
 if (goToInfoPopup) {
     goToInfoPopup.addEventListener('click', function() {
         if (cart.length === 0) {
             return;
         }
         cartPopup.style.display = 'none';
+        if (cartOverlay) cartOverlay.style.display = 'none';
         document.querySelector('.order-form').style.display = 'none';
         document.querySelector('.cart-page').style.display = 'none';
         document.querySelector('.info-form').style.display = 'block';
@@ -213,6 +209,7 @@ if (addToCartBtn) {
                             cartPopup.style.display = 'block';
                             renderCartPopup();
                         }
+                        if (cartOverlay) cartOverlay.style.display = 'block'; // Show overlay when returning to cart
                     }, 1000);
                     return; // Prevent immediate modal close
                 }
@@ -256,6 +253,7 @@ if (goToCartBtn) {
             cartPopup.style.display = 'block';
             renderCartPopup();
         }
+        if (cartOverlay) cartOverlay.style.display = 'block'; // Ensure overlay is shown
     });
 }
 if (cancelModalBtn) {
@@ -325,6 +323,7 @@ if (backToCartBtn) {
             cartPopup.style.display = 'block';
             renderCartPopup();
         }
+        if (cartOverlay) cartOverlay.style.display = 'block'; // Ensure overlay is shown
         clearInfoFormFields(); // Clear fields
     });
 }
@@ -344,13 +343,15 @@ if (deliveryForm) {
     deliveryForm.addEventListener('submit', function(e) {
         e.preventDefault(); // Prevent default form submission
 
-        // Set resumen field as before
+        // Set resumen field as plain text (for email)
         const resumenField = document.getElementById('resumen-field');
         let orderSummary = [];
+        let orderSummaryPlain = [];
         let total = 0;
         cart.forEach(item => {
             let itemCost = getItemCost(item);
             total += itemCost;
+            // For thank you page (HTML)
             let summaryLine = `${item.drink}`;
             if (item.options && item.options.length) {
                 summaryLine += ` (${item.options.join(', ')})`;
@@ -359,8 +360,17 @@ if (deliveryForm) {
                 summaryLine += `<br><span class="comentario-label">Comentario:</span> <span class="comentario-text">${item.comment}</span>`;
             }
             orderSummary.push(summaryLine);
+            // For email (plain text)
+            let summaryLinePlain = `${item.drink}`;
+            if (item.options && item.options.length) {
+                summaryLinePlain += ` (${item.options.join(', ')})`;
+            }
+            if (item.comment && item.comment.trim() !== '') {
+                summaryLinePlain += `\nComentario: ${item.comment}`;
+            }
+            orderSummaryPlain.push(summaryLinePlain);
         });
-        let resumenText = orderSummary.join('<br>') + `\nTotal: $${total}`;
+        let resumenText = orderSummaryPlain.join('\n') + `\nTotal: $${total}`;
         if (resumenField) resumenField.value = resumenText;
 
         // Prepare form data
@@ -455,6 +465,7 @@ function renderCartPopup() {
                 selectedDrink = item.drink || item;
                 // Hide carrito popup while editing
                 if (cartPopup) cartPopup.style.display = 'none';
+                if (cartOverlay) cartOverlay.style.display = 'none'; // Hide overlay so Personalizar is interactive
                 if (optionsModal) optionsModal.style.display = 'flex';
                 document.querySelectorAll('#menu-list span').forEach(sp => {
                     if (sp.textContent === selectedDrink) sp.classList.add('selected-menu-item');
